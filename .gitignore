@@ -1,0 +1,50 @@
+# --- Build artifacts ---
+codeclip
+*.o
+*.a
+*.so
+*.out
+*.exe
+
+# --- Build directories ---
+/build/
+/dist/
+/bin/
+/obj/
+
+# --- Dependency / package caches ---
+*.dSYM/
+*.dll
+*.lib
+
+# --- Generated files ---
+*.log
+*.tmp
+*.swp
+*.bak
+*.old
+*.orig
+
+# --- macOS and Linux system files ---
+.DS_Store
+.AppleDouble
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+# --- Editors and IDEs ---
+.vscode/
+.idea/
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+*.user
+
+# --- Backup files ---
+*~
+# --- Test binaries ---
+test_*
+
+# --- Codeclip output ---
+/codeclips/
+
