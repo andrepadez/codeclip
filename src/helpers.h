@@ -25,5 +25,7 @@ void build_output_path(char *outfile_path, size_t size,
 int write_single_file(const char *path, struct Config *cfg);
 int write_directory(const char *path, struct Config *cfg);
 void maybe_copy_to_clipboard(const char *outfile_path, struct Config *cfg);
+int clear_clips(const struct Config *cfg, int force);
+
 #endif
 

@@ -27,6 +27,12 @@ int main(int argc, char *argv[]) {
     if (init_config(&cfg) != 0)
         return 1;
 
+    if (strcmp(argv[1], "clear") == 0) {
+        int force = (argc > 2 && strcmp(argv[2], "--force") == 0);
+        clear_clips(&cfg, force);
+        return 0;
+    }
+
     if (!realpath(argv[1], target_dir)) {
         perror("realpath");
         return 1;

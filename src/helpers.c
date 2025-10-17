@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <libgen.h>
 #include <time.h>  
+#include <dirent.h>
 #include "helpers.h"
 #include "config_manager.h"
 #include "clipboard.h"
@@ -215,3 +216,39 @@ int write_directory(const char *path, struct Config *cfg) {
     return 0;
 }
 
+int clear_clips(const struct Config *cfg, int force) {
+    const char *dir = cfg->output_dir;
+    DIR *d = opendir(dir);
+    if (!d) {
+        perror("opendir");
+        return -1;
+    }
+
+    // Confirm if not forced
+    if (!force) {
+        printf("[codeclip] This will delete all files in: %s\n", dir);
+        printf("Proceed? (y/N): ");
+        char response[8];
+        if (!fgets(response, sizeof(response), stdin) ||
+            (response[0] != 'y' && response[0] != 'Y')) {
+            printf("[codeclip] Cancelled.\n");
+            closedir(d);
+            return 0;
+        }
+    }
+
+    struct dirent *entry;
+    int count = 0;
+    char path[MAX_PATH];
+
+    while ((entry = readdir(d))) {
+        if (entry->d_name[0] == '.') continue;  // skip hidden
+        snprintf(path, sizeof(path), "%.2047s/%.255s", dir, entry->d_name);
+        if (unlink(path) == 0)
+            count++;
+    }
+
+    closedir(d);
+    printf("[codeclip] Deleted %d file(s) from %s\n", count, dir);
+    return 0;
+}
