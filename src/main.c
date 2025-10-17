@@ -3,7 +3,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <libgen.h> // for basename()
+#include <libgen.h>   // for basename()
+#include <time.h>     // ✅ for time(), localtime(), strftime()
 #include "helpers.h"
 #include "config_manager.h"
 #include "bfs_traversal.h"
@@ -69,9 +70,29 @@ int main(int argc, char *argv[]) {
 
     // --- Handle single-file mode ---
     if (S_ISREG(st.st_mode)) {
-        const char *base = basename(target_dir);
-        strncat(outfile_path, base, sizeof(outfile_path) - strlen(outfile_path) - 1);
-        strncat(outfile_path, ".md", sizeof(outfile_path) - strlen(outfile_path) - 1);
+        // --- Compute relative path from project root (if available) ---
+        const char *rel = target_dir;
+        if (has_git && strstr(target_dir, project_root))
+            rel = target_dir + strlen(project_root);
+        if (rel[0] == '/') rel++; // skip leading slash
+
+        // --- Replace '/' with '_' to make it safe ---
+        char safe_rel[MAX_PATH];
+        snprintf(safe_rel, sizeof(safe_rel), "%s", rel);
+        for (char *p = safe_rel; *p; p++)
+            if (*p == '/')
+                *p = '_';
+
+        // --- Add timestamp prefix ---
+        time_t now = time(NULL);
+        struct tm *tm_info = localtime(&now);
+        char timestamp[32];
+        strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", tm_info);
+
+        // --- Build final output filename ---
+        len = strlen(outfile_path);
+        snprintf(outfile_path + len, sizeof(outfile_path) - len,
+         "%.31s_%.255s.md", timestamp, safe_rel);
 
         outfile = fopen(outfile_path, "w");
         if (!outfile) {
@@ -79,15 +100,15 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        fprintf(outfile, "# File: %s\n\n", base);
+        fprintf(outfile, "# File: %s\n\n", target_dir);
 
         struct FTW dummy = { .base = 0, .level = 0 };
         process_file(target_dir, &st, FTW_F, &dummy);
 
         fclose(outfile);
-
         printf("[codeclip] Wrote single file to %s\n", outfile_path);
-    } 
+    }
+    
     else if (S_ISDIR(st.st_mode)) {
         // --- Directory traversal mode ---
         const char *rel = target_dir;
