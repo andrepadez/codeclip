@@ -1,5 +1,31 @@
 # 🧠 Codeclip
 
+**Codeclip** is now available on the AUR! 🎉
+
+## 🧩 Installation (Arch / Manjaro)
+
+### With an AUR helper (recommended)
+
+```bash
+yay -S codeclip
+```
+
+or with `paru`:
+
+```bash
+paru -S codeclip
+```
+
+### Manual installation
+
+```bash
+git clone https://aur.archlinux.org/codeclip.git
+cd codeclip
+makepkg -si
+```
+
+---
+
 **Codeclip** is a fast, minimal CLI tool written in C that turns entire codebases — or single files — into clean, syntax-highlighted Markdown files.  
 It’s ideal for documentation, sharing snippets, or creating AI-ready context dumps of your code.
 
@@ -10,7 +36,7 @@ It’s ideal for documentation, sharing snippets, or creating AI-ready context d
 - 🪶 **Simple CLI:** Works with just one command — `codeclip <path>`
 - 🧭 **Auto project detection:** Finds the project root via `.git`
 - 🧱 **Breadth-first traversal:** Outputs files in logical, readable order
-- 🧹 **Smart ignore system:** Skips binaries and common junk (`.git`, `node_modules`, etc.)
+- 🧹 **Smart ignore system:** Skips binaries and common junk (`.git`, `node_modules`, etc.`)
 - 🧩 **Single-file mode:** `codeclip file.c` dumps one file instead of a whole folder
 - 💾 **Automatic config:** Creates default config and ignore files on first run
 - 📋 **Clipboard integration:**
@@ -25,12 +51,12 @@ It’s ideal for documentation, sharing snippets, or creating AI-ready context d
 
 ---
 
-## ⚙️ Installation
+## ⚙️ Installation (from source)
 
 ### Build from source
 
 ```bash
-git clone https://github.com/<yourusername>/codeclip.git
+git clone https://github.com/andrepadez/codeclip.git
 cd codeclip
 make clean && make
 sudo make install
@@ -180,6 +206,5 @@ clipboard mode toggle, and timestamped file outputs.
 
 ## 📄 License
 
-MIT License © 2025 Your Name  
+MIT License © 2025 André Pádez  
 Use freely, modify, share, and have fun!
-
