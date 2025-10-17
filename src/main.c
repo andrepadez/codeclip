@@ -3,21 +3,16 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <time.h>
-#include <ftw.h>
-
+#include <libgen.h> // for basename()
 #include "helpers.h"
 #include "config_manager.h"
-#include "clipboard.h"
 #include "bfs_traversal.h"
+#include "clipboard.h"
 
-#define OUTDIR_NAME "codeclips"
-
+char target_dir[MAX_PATH];
 char project_root[MAX_PATH];
 char project_name[128];
 int has_git = 0;
-
-char target_dir[MAX_PATH];
 FILE *outfile = NULL;
 
 int main(int argc, char *argv[]) {
@@ -27,18 +22,24 @@ int main(int argc, char *argv[]) {
     }
 
     struct Config cfg;
-    load_config(&cfg);       // ✅ Ensures ~/.config/codeclip exists
+    if (load_config(&cfg) < 0) {
+        fprintf(stderr, "Error: failed to load config.\n");
+        return 1;
+    }
     mkdir(cfg.output_dir, 0755);
 
-    // Resolve full target path
-    realpath(argv[1], target_dir);
-    struct stat st;
-    if (stat(target_dir, &st) != 0 || !S_ISDIR(st.st_mode)) {
-        fprintf(stderr, "Error: '%s' is not a directory\n", target_dir);
+    if (!realpath(argv[1], target_dir)) {
+        perror("realpath");
         return 1;
     }
 
-    // Detect .git project root and name
+    struct stat st;
+    if (stat(target_dir, &st) != 0) {
+        perror("stat");
+        return 1;
+    }
+
+    // --- Detect Git root (if applicable) ---
     has_git = find_git_root(
         target_dir,
         project_root, sizeof(project_root),
@@ -49,43 +50,89 @@ int main(int argc, char *argv[]) {
         printf("[codeclip] Detected project root: %s\n", project_root);
         printf("[codeclip] Project name: %s\n", project_name);
     } else {
-        printf("[codeclip] No .git found — using given directory as base.\n");
-        const char *slash = strrchr(target_dir, '/');
-        if (slash)
-            strncpy(project_name, slash + 1, sizeof(project_name) - 1);
+        const char *last_slash = strrchr(target_dir, '/');
+        if (last_slash)
+            strncpy(project_name, last_slash + 1, sizeof(project_name) - 1);
         else
             strncpy(project_name, target_dir, sizeof(project_name) - 1);
         project_name[sizeof(project_name) - 1] = '\0';
     }
 
-    // Prepare timestamped output file
-    time_t t = time(NULL);
-    struct tm *tm = localtime(&t);
-    char timestamp[64];
-    strftime(timestamp, sizeof(timestamp), "%Y-%m-%d_%H-%M-%S", tm);
-
     char outfile_path[MAX_PATH];
-    if (snprintf(outfile_path, sizeof(outfile_path),
-                 "%s/%s_codeclip.md", cfg.output_dir, timestamp) >= (int)sizeof(outfile_path)) {
-        fprintf(stderr, "Error: output path too long.\n");
+    outfile_path[0] = '\0';
+    strncpy(outfile_path, cfg.output_dir, sizeof(outfile_path) - 1);
+    outfile_path[sizeof(outfile_path) - 1] = '\0';
+
+    size_t len = strlen(outfile_path);
+    if (len + 1 < sizeof(outfile_path))
+        strncat(outfile_path, "/", sizeof(outfile_path) - len - 1);
+
+    // --- Handle single-file mode ---
+    if (S_ISREG(st.st_mode)) {
+        const char *base = basename(target_dir);
+        strncat(outfile_path, base, sizeof(outfile_path) - strlen(outfile_path) - 1);
+        strncat(outfile_path, ".md", sizeof(outfile_path) - strlen(outfile_path) - 1);
+
+        outfile = fopen(outfile_path, "w");
+        if (!outfile) {
+            perror("fopen output");
+            return 1;
+        }
+
+        fprintf(outfile, "# File: %s\n\n", base);
+
+        struct FTW dummy = { .base = 0, .level = 0 };
+        process_file(target_dir, &st, FTW_F, &dummy);
+
+        fclose(outfile);
+
+        printf("[codeclip] Wrote single file to %s\n", outfile_path);
+    } 
+    else if (S_ISDIR(st.st_mode)) {
+        // --- Directory traversal mode ---
+        const char *rel = target_dir;
+        if (has_git && strstr(target_dir, project_root))
+            rel = target_dir + strlen(project_root);
+
+        char safe_rel[MAX_PATH];
+        snprintf(safe_rel, sizeof(safe_rel), "%s", rel[0] == '/' ? rel + 1 : rel);
+        for (char *p = safe_rel; *p; p++)
+            if (*p == '/')
+                *p = '_';
+
+        len = strlen(outfile_path);
+        snprintf(outfile_path + len, sizeof(outfile_path) - len,
+                 "%.127s_%.255s.md", project_name, safe_rel);
+
+        outfile = fopen(outfile_path, "w");
+        if (!outfile) {
+            perror("fopen output");
+            return 1;
+        }
+
+        fprintf(outfile, "# Project: %s\n\n", project_name);
+
+        if (bfs_traverse(target_dir, process_file) != 0) {
+            fprintf(stderr, "Error during file traversal.\n");
+            fclose(outfile);
+            return 1;
+        }
+
+        fclose(outfile);
+        printf("[codeclip] Output written to %s\n", outfile_path);
+    } else {
+        fprintf(stderr, "Error: '%s' is not a regular file or directory\n", target_dir);
         return 1;
     }
 
-    outfile = fopen(outfile_path, "w");
-    if (!outfile) {
-        perror("fopen");
-        return 1;
+    // --- Copy to clipboard if configured ---
+    if (cfg.clipboard_tool[0]) {
+        if (copy_to_clipboard(outfile_path, cfg.clipboard_tool) == 0) {
+            printf("[codeclip] Copied to clipboard using '%s'\n", cfg.clipboard_tool);
+        } else {
+            fprintf(stderr, "[codeclip] Warning: failed to copy to clipboard.\n");
+        }
     }
-
-    // Walk and process files
-    bfs_traverse(target_dir, process_file);
-    fclose(outfile);
-
-    // ✅ Unified clipboard logic
-    copy_to_clipboard(outfile_path, cfg.clipboard_tool);
-
-    printf("Code from project '%s' saved to:\n  %s\n",
-           project_name, outfile_path);
 
     return 0;
 }
