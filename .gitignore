@@ -48,3 +48,4 @@ test_*
 # --- Codeclip output ---
 /codeclips/
 
+src/generated/

@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <ftw.h>
+
 #include "helpers.h"
 #include "config_manager.h"
 
@@ -20,7 +21,12 @@ int main(int argc, char *argv[]) {
     }
 
     struct Config cfg;
+    load_config(&cfg);                     // ✅ Create & read ~/.config/codeclip
 
+    // Make sure output directory exists
+    mkdir(cfg.output_dir, 0755);
+
+    // Resolve the input directory
     realpath(argv[1], target_dir);
     struct stat st;
     if (stat(target_dir, &st) != 0 || !S_ISDIR(st.st_mode)) {
@@ -28,18 +34,15 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    char *home = getenv("HOME");
-    char outdir[MAX_PATH];
-    snprintf(outdir, sizeof(outdir), "%s/%s", home, OUTDIR_NAME);
-    mkdir(outdir, 0755);
-
+    // Create output file with timestamp
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
     char timestamp[64];
     strftime(timestamp, sizeof(timestamp), "%Y-%m-%d_%H-%M-%S", tm);
 
     char outfile_path[MAX_PATH];
-    if (snprintf(outfile_path, sizeof(outfile_path), "%s/%s_codeclip.md", outdir, timestamp) >= (int)sizeof(outfile_path)) {
+    if (snprintf(outfile_path, sizeof(outfile_path), "%s/%s_codeclip.md",
+                 cfg.output_dir, timestamp) >= (int)sizeof(outfile_path)) {
         fprintf(stderr, "Error: output path too long.\n");
         return 1;
     }
@@ -74,4 +77,3 @@ int main(int argc, char *argv[]) {
     printf("Code from '%s' saved to:\n  %s\n", target_dir, outfile_path);
     return 0;
 }
-

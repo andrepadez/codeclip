@@ -1,0 +1,5 @@
+# Codeclip configuration file
+# Default values bundled with the program
+
+output_dir: "~/.local/share/codeclips"
+clipboard_tool: "" #leave empty for auto detection

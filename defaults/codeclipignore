@@ -1,0 +1,143 @@
+# Codeclip default ignore patterns
+# One per line. Supports simple substring matches.
+
+# --- General ---
+.git
+.gitignore
+.gitmodules
+.hg
+.svn
+.cache
+tmp
+temp
+logs
+log
+*.log
+*.tmp
+*.swp
+*.bak
+*.old
+*.orig
+*.lock
+.DS_Store
+Thumbs.db
+
+# --- Node / JavaScript / TypeScript ---
+node_modules
+bower_components
+dist
+build
+out
+coverage
+.npm
+.pnpm
+.yarn
+.next
+.nuxt
+.vite
+storybook-static
+public # built static assets
+.env
+.env.*
+
+# --- Python ---
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.venv
+venv
+env
+env/
+.mypy_cache
+.pytest_cache
+.tox
+build
+dist
+.eggs
+*.egg-info
+
+# --- Java / Kotlin / Gradle ---
+target
+build
+.gradle
+out
+*.class
+*.jar
+*.war
+*.ear
+
+# --- C / C++ / Rust ---
+*.o
+*.a
+*.so
+*.dll
+*.exe
+*.obj
+*.lib
+*.pdb
+*.dSYM
+target
+build
+
+# --- Go ---
+bin
+pkg
+*.exe
+*.test
+
+# --- PHP / Composer ---
+vendor
+composer.lock
+
+# --- Ruby ---
+.bundle
+vendor/bundle
+log
+tmp
+coverage
+
+# --- Swift / iOS / Xcode ---
+DerivedData
+*.xcuserdata
+*.xcuserstate
+*.xcworkspace
+*.xcodeproj
+*.swiftpm
+build
+Pods
+
+# --- Frontend frameworks ---
+.cache
+.svelte-kit
+.angular
+.next
+.nuxt
+.vite
+.vuepress
+.hugo
+astro
+.sass-cache
+webpack-stats.json
+
+# --- Misc. environment/config ---
+*.env
+*.env.*
+*.pem
+*.key
+*.crt
+*.keystore
+*.p12
+*.pfx
+
+# --- IDE / Editor files ---
+.vscode
+.idea
+*.iml
+*.sublime-*
+*.code-workspace
+
+# --- Framework-specific ---
+components/ui    # shadcn components
+prisma
+.cargo

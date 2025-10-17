@@ -36,3 +36,26 @@ uninstall:
 	rm -f $(DESTDIR)/usr/local/bin/$(TARGET)
 
 .PHONY: all clean install uninstall run
+
+
+# === Embed default config files ===
+DEFAULTS_DIR := defaults
+GENERATED_DIR := src/generated
+GENERATED_HEADERS := $(GENERATED_DIR)/config_default.h $(GENERATED_DIR)/ignore_default.h
+
+$(GENERATED_DIR):
+	mkdir -p $(GENERATED_DIR)
+
+# Turn defaults/config.yaml -> src/generated/config_default.h
+$(GENERATED_DIR)/config_default.h: $(DEFAULTS_DIR)/config.yaml | $(GENERATED_DIR)
+	@echo "const char *DEFAULT_CONFIG_YAML = R\"EOF(" > $@ && cat $< >> $@ && echo ")EOF\";" >> $@
+
+# Turn defaults/codeclipignore -> src/generated/ignore_default.h
+$(GENERATED_DIR)/ignore_default.h: $(DEFAULTS_DIR)/codeclipignore | $(GENERATED_DIR)
+	@echo "const char *DEFAULT_IGNORE_FILE = R\"EOF(" > $@ && cat $< >> $@ && echo ")EOF\";" >> $@
+
+# Ensure generated headers exist before compiling config_manager
+src/config_manager.o: $(GENERATED_HEADERS)
+
+# Add include path
+CFLAGS  := -Wall -O2 -D_XOPEN_SOURCE=700 -Isrc -Isrc/generated
