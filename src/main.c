@@ -9,6 +9,7 @@
 #include "helpers.h"
 #include "config_manager.h"
 #include "clipboard.h"
+#include "bfs_traversal.h"
 
 #define OUTDIR_NAME "codeclips"
 
@@ -77,7 +78,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Walk and process files
-    nftw(target_dir, process_file, 32, FTW_PHYS);
+    bfs_traverse(target_dir, process_file);
     fclose(outfile);
 
     // ✅ Unified clipboard logic
