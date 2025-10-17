@@ -252,3 +252,7 @@ int clear_clips(const struct Config *cfg, int force) {
     printf("[codeclip] Deleted %d file(s) from %s\n", count, dir);
     return 0;
 }
+
+void print_version(void) {
+    printf("codeclip %s\n", CODECLIP_VERSION);
+}

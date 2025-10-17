@@ -23,6 +23,13 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    if (strcmp(argv[1], "version") == 0 ||
+        strcmp(argv[1], "-v") == 0 ||
+        strcmp(argv[1], "--version") == 0) {
+        print_version();
+        return 0;
+    }
+
     struct Config cfg;
     if (init_config(&cfg) != 0)
         return 1;

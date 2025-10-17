@@ -8,6 +8,7 @@
 #include "config_manager.h"
 
 #define MAX_PATH 4096
+#define CODECLIP_VERSION "0.9.0"
 
 extern char target_dir[MAX_PATH];
 extern FILE *outfile;
@@ -25,7 +26,10 @@ void build_output_path(char *outfile_path, size_t size,
 int write_single_file(const char *path, struct Config *cfg);
 int write_directory(const char *path, struct Config *cfg);
 void maybe_copy_to_clipboard(const char *outfile_path, struct Config *cfg);
+
+// for sub-commeands
 int clear_clips(const struct Config *cfg, int force);
+void print_version(void);
 
 #endif
 
