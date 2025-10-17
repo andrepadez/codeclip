@@ -25,6 +25,14 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // --- Handle help flags early ---
+    if (strcmp(argv[1], "help") == 0 ||
+        strcmp(argv[1], "-h") == 0 ||
+        strcmp(argv[1], "--help") == 0) {
+        print_help();
+        return 0;
+    }
+
     // --- Detect clipboard mode flag (-c / --clipboard) ---
     int clipboard_mode = 0;
     for (int i = 1; i < argc; i++) {

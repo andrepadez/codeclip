@@ -270,3 +270,23 @@ int clear_clips(const struct Config *cfg, int force) {
 void print_version(void) {
     printf("codeclip %s\n", CODECLIP_VERSION);
 }
+
+void print_help(void) {
+    printf("codeclip %s\n", CODECLIP_VERSION);
+    printf("Usage:\n");
+    printf("  codeclip <path> [options]\n");
+    printf("  codeclip <subcommand> [options]\n\n");
+    printf("Options:\n");
+    printf("  -c, --clipboard    Copy full markdown content instead of file path\n");
+    printf("  -h, --help         Show this help message\n");
+    printf("  -v, --version      Show version information\n\n");
+    printf("Subcommands:\n");
+    printf("  clear              Delete all generated markdown files\n");
+    printf("  version            Show version information\n");
+    printf("  help               Show this help message\n\n");
+    printf("Examples:\n");
+    printf("  codeclip src/                    # Dump a project directory\n");
+    printf("  codeclip -c src/main.c           # Dump a single file, copy full markdown\n");
+    printf("  codeclip clear                   # Clear saved clips\n");
+    printf("  codeclip version                 # Show version\n\n");
+}
