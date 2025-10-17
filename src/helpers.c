@@ -17,6 +17,15 @@ extern char project_name[128];
 extern int has_git;
 extern FILE *outfile;
 
+int init_config(struct Config *cfg) {
+    if (load_config(cfg) < 0) {
+        fprintf(stderr, "Error: failed to load config.\n");
+        return -1;
+    }
+    mkdir(cfg->output_dir, 0755);
+    return 0;
+}
+
 int should_skip(const char *path) {
     return strstr(path, "/.git") ||
            strstr(path, "/node_modules") ||
@@ -89,22 +98,25 @@ int find_git_root(const char *start_path, char *git_root, size_t size, char *pro
 }
 
 // === Helper: clipboard post-process ===
-void maybe_copy_to_clipboard(const char *outfile_path, struct Config *cfg) {
+void maybe_copy_to_clipboard(const char *outfile_path, struct Config *cfg, int clipboard_mode) {
     if (!cfg->clipboard_tool[0]) return;
-    if (copy_to_clipboard(outfile_path, cfg->clipboard_tool) == 0)
-        printf("[codeclip] Copied to clipboard using '%s'\n", cfg->clipboard_tool);
-    else
-        fprintf(stderr, "[codeclip] Warning: failed to copy to clipboard.\n");
-}
 
-// === Helper: initialize config and ensure output dir ===
-int init_config(struct Config *cfg) {
-    if (load_config(cfg) < 0) {
-        fprintf(stderr, "Error: failed to load config.\n");
-        return -1;
+    if (clipboard_mode) {
+        // Old behavior — copy full file contents
+        if (copy_to_clipboard(outfile_path, cfg->clipboard_tool) == 0)
+            printf("[codeclip] Copied file contents using '%s'\n", cfg->clipboard_tool);
+        else
+            fprintf(stderr, "[codeclip] Warning: failed to copy contents.\n");
+    } else {
+        // New default — copy just the file path
+        char cmd[MAX_PATH + 64];
+        snprintf(cmd, sizeof(cmd), "echo '%s' | %s", outfile_path, cfg->clipboard_tool);
+        int ret = system(cmd);
+        if (ret == 0)
+            printf("[codeclip] Copied file path to clipboard: %s\n", outfile_path);
+        else
+            fprintf(stderr, "[codeclip] Warning: failed to copy file path.\n");
     }
-    mkdir(cfg->output_dir, 0755);
-    return 0;
 }
 
 // === Helper: detect project info from target path ===
@@ -163,7 +175,7 @@ void build_output_path(char *outfile_path, size_t size,
 }
 
 // === Helper: write single file ===
-int write_single_file(const char *path, struct Config *cfg) {
+int write_single_file(const char *path, struct Config *cfg, int clipboard_mode) {
     char outfile_path[MAX_PATH];
     build_output_path(outfile_path, sizeof(outfile_path), cfg->output_dir, path);
 
@@ -187,12 +199,13 @@ int write_single_file(const char *path, struct Config *cfg) {
 
     fclose(outfile);
     printf("[codeclip] Wrote single file to %s\n", outfile_path);
-    maybe_copy_to_clipboard(outfile_path, cfg);
+
+    maybe_copy_to_clipboard(outfile_path, cfg, clipboard_mode);
     return 0;
 }
 
 // === Helper: write directory ===
-int write_directory(const char *path, struct Config *cfg) {
+int write_directory(const char *path, struct Config *cfg, int clipboard_mode) {
     char outfile_path[MAX_PATH];
     build_output_path(outfile_path, sizeof(outfile_path), cfg->output_dir, path);
 
@@ -212,7 +225,8 @@ int write_directory(const char *path, struct Config *cfg) {
 
     fclose(outfile);
     printf("[codeclip] Output written to %s\n", outfile_path);
-    maybe_copy_to_clipboard(outfile_path, cfg);
+
+    maybe_copy_to_clipboard(outfile_path, cfg, clipboard_mode);
     return 0;
 }
 

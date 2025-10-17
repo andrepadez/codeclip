@@ -23,11 +23,11 @@ int init_config(struct Config *cfg);
 void detect_project(const char *target);
 void build_output_path(char *outfile_path, size_t size,
                        const char *base_dir, const char *target);
-int write_single_file(const char *path, struct Config *cfg);
-int write_directory(const char *path, struct Config *cfg);
-void maybe_copy_to_clipboard(const char *outfile_path, struct Config *cfg);
+int write_single_file(const char *path, struct Config *cfg, int clipboard_mode);
+int write_directory(const char *path, struct Config *cfg, int clipboard_mode);
+void maybe_copy_to_clipboard(const char *outfile_path, struct Config *cfg, int clipboard_mode);
 
-// for sub-commeands
+// for sub-commands
 int clear_clips(const struct Config *cfg, int force);
 void print_version(void);
 
