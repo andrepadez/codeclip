@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <errno.h>
+#include <pwd.h>
 
 static int mkdir_p(const char *path) {
     char tmp[MAX_PATH];
@@ -27,10 +28,28 @@ static int mkdir_p(const char *path) {
     return mkdir(tmp, 0755);
 }
 
+// detect first available clipboard tool (wl-copy, xclip, pbcopy)
+static const char *detect_clipboard_tool(void) {
+    const char *tools[] = { "wl-copy", "xclip", "pbcopy" };
+    for (int i = 0; i < 3; i++) {
+        char cmd[256];
+        snprintf(cmd, sizeof(cmd), "command -v %s >/dev/null 2>&1", tools[i]);
+        if (system(cmd) == 0) {
+            return tools[i];
+        }
+    }
+    return "";
+}
+
 int ensure_config_dir(void) {
     const char *home = getenv("HOME");
     if (!home || !*home) {
-        fprintf(stderr, "Error: HOME not set.\n");
+        struct passwd *pw = getpwuid(getuid());
+        home = pw ? pw->pw_dir : NULL;
+    }
+
+    if (!home) {
+        fprintf(stderr, "Error: cannot determine home directory.\n");
         return -1;
     }
 
@@ -48,16 +67,27 @@ int ensure_config_dir(void) {
     return 0;
 }
 
-static void create_default_files(const char *config_path, const char *ignore_path) {
+static void create_default_files(const char *config_path, const char *ignore_path, const char *home) {
+    const char *detected_tool = detect_clipboard_tool();
+
+    // --- Create config.yaml ---
     FILE *f = fopen(config_path, "w");
     if (f) {
-        fputs(DEFAULT_CONFIG_YAML, f);
+        fprintf(f,
+            "# Codeclip configuration file\n"
+            "# Created automatically on first run\n\n"
+            "output_dir: \"%s/.local/share/codeclips\"\n"
+            "clipboard_tool: \"%s\" # detected automatically\n",
+            home, detected_tool
+        );
         fclose(f);
-        printf("[codeclip] Created default config: %s\n", config_path);
+        printf("[codeclip] Created default config with clipboard tool: %s\n",
+               detected_tool[0] ? detected_tool : "(none)");
     } else {
         perror("fopen config.yaml");
     }
 
+    // --- Create codeclipignore from embedded default ---
     FILE *i = fopen(ignore_path, "w");
     if (i) {
         fputs(DEFAULT_IGNORE_FILE, i);
@@ -73,7 +103,12 @@ int load_config(struct Config *cfg) {
 
     const char *home = getenv("HOME");
     if (!home || !*home) {
-        fprintf(stderr, "Error: HOME not set.\n");
+        struct passwd *pw = getpwuid(getuid());
+        home = pw ? pw->pw_dir : NULL;
+    }
+
+    if (!home) {
+        fprintf(stderr, "Error: cannot determine home directory.\n");
         return -1;
     }
 
@@ -93,7 +128,7 @@ int load_config(struct Config *cfg) {
     if (access(ignore_path, F_OK) != 0) missing = 1;
 
     if (missing) {
-        create_default_files(config_path, ignore_path);
+        create_default_files(config_path, ignore_path, home);
     }
 
     FILE *f = fopen(config_path, "r");

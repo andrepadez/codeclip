@@ -7,7 +7,8 @@ SRC_DIR := src
 SRC     := $(SRC_DIR)/main.c \
            $(SRC_DIR)/process_file.c \
            $(SRC_DIR)/helpers.c \
-           $(SRC_DIR)/config_manager.c
+           $(SRC_DIR)/config_manager.c \
+           $(SRC_DIR)/clipboard.c
 OBJS    := $(SRC:.c=.o)
 DEPS    := $(SRC_DIR)/helpers.h $(SRC_DIR)/config_manager.h
 
